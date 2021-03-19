@@ -74,11 +74,11 @@ app.get("/user/:username/:customList", function(req, res){
     if(!err && foundUser){
       foundUser.lists.forEach(function(list){
         if(list.name!=customListName) {
-            const list = new List({
+            const newlist = new List({
             name: customListName,
             items: defaultItems
           });
-          foundUser.lists.push(list);
+          foundUser.lists.push(newlist);
           foundUser.save();
           res.redirect("/user/"+ username + "/" + customListName)
         }
@@ -140,7 +140,7 @@ app.post("/user/:username", function(req, res){
   const item = new Item ({
     name: itemName
   });
-  User.findOne({username: req.params.username}, function(err, foundUser){
+  User.findOne({username: username}, function(err, foundUser){
     if(!err){
       foundUser.lists.forEach(function(list){
         if(list.name === listName) {

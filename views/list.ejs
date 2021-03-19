@@ -1,4 +1,5 @@
 <%-include("header")-%>
+
     <div class="box" id="heading">
       <h1> <%=listtitle%></h1>
     </div>
@@ -13,13 +14,14 @@
         <p><%=newitem.name%></p>
       </div>
       <input type="hidden" name="listName" value="<%=listtitle%>"></input>
+      <input type="hidden" name="username" value="<%=username%>"></input>
     </form>
 
   <%})%>
 
-    <form class="item" action="/" method="post">
+    <form class="item" action="/user/<%=username%>" method="post">
       <input type="text" name="newItem" placeholder="New Item" autocomplete="off">
-      <button type="submit" name="list" value="<%=listtitle%>">+</button>
+      <button class="listbtn" type="submit" name="list" value="<%=listtitle%>">+</button>
     </form>
 
 </div>

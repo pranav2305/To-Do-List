@@ -21,8 +21,17 @@ const listSchema = {
   items: [itemsSchema]
 };
 
+const userSchema = {
+  username: {
+    type: String,
+    unique: true},
+  password: String,
+  lists: [listSchema]
+}
+
 const Item = mongoose.model("Item", itemsSchema);
 const List = mongoose.model("List", listSchema);
+const User = mongoose.model("User", userSchema);
 
 const item1 = new Item({
   name: "Welcome to your todolist"
@@ -38,97 +47,141 @@ const item3 = new Item({
 
 const defaultItems = [item1, item2, item3];
 
-app.get("/", function (req, res){
+const defaultList = new List({
+  name: "Today",
+  items: defaultItems
+})
 
-  Item.find({}, function(err, foundItems){
+app.get("/sign-up", function(req, res){
+  res.render("signup");
+})
 
-    if(foundItems.length==0){
-      Item.insertMany(defaultItems, function(err){
-        if (err){
-          console.log(err);
-        }
-      });
-      res.redirect("/");
-    }
-    else {
-      res.render("list", {listtitle: "Today",  newlistitem: foundItems});
-    }
-  });
+app.get("/", function(req, res){
+  res.render("login");
+})
+
+app.get("/user/:username", function (req, res){
+
+res.redirect("/user/" + req.params.username + "/today");
 
 });
 
-app.get("/:customList", function(req, res){
+app.get("/user/:username/:customList", function(req, res){
   const customListName = lodash.capitalize(req.params.customList);
+  const username =  req.params.username;
 
-  List.findOne({name: customListName}, function(err, foundList){
-  if(!err){
-    if(!foundList){
-      const list = new List({
-        name: customListName,
-        items: defaultItems
+  User.findOne({username: username}, function(err, foundUser){
+    if(!err && foundUser){
+      foundUser.lists.forEach(function(list){
+        if(list.name!=customListName) {
+            const list = new List({
+            name: customListName,
+            items: defaultItems
+          });
+          foundUser.lists.push(list);
+          foundUser.save();
+          res.redirect("/user/"+ username + "/" + customListName)
+        }
+        else{
+          res.render("list", {listtitle: list.name, newlistitem: list.items, username: username})
+        }
       });
-
-      list.save();
-      res.redirect("/"+customListName)
     }
     else{
-      res.render("list", {listtitle: foundList.name, newlistitem: foundList.items})
+      console.log("User not found");
     }
-  }
-})
-})
+  });
+});
 
 app.get("/about", function(req, res){
   res.render("about");
 })
 
 app.post("/", function(req, res){
+    const username = req.body.uname;
+    const password = req.body.psw;
+
+  User.findOne({username: username, password: password}, function(err, foundUser){
+    if(!err){
+      res.redirect("/user/" + username);
+    }
+    else {
+      console.log(err);
+      res.redirect("/");
+    }
+    });
+  });
+
+app.post("/sign-up", function(req, res){
+  const username = req.body.uname;
+  const password = req.body.psw;
+
+  const user = new User ({
+    username: username,
+    password: password,
+    lists: [defaultList]
+  });
+
+  user.save(function(err){
+    if(!err){
+      res.redirect("/");
+    }
+    else{
+      res.redirect("/sign-up");
+    }
+  });
+});
+
+app.post("/user/:username", function(req, res){
   const itemName = req.body.newItem;
   const listName = req.body.list;
+  const username = req.params.username;
 
   const item = new Item ({
     name: itemName
   });
-
-  if(listName === "Today"){
-    item.save();
-    res.redirect("/");
-  }
-  else{
-    List.findOne({name: listName}, function(err, foundList){
-      foundList.items.push(item);
-      foundList.save();
-      res.redirect("/" + listName);
-    });
-  }
+  User.findOne({username: req.params.username}, function(err, foundUser){
+    if(!err){
+      foundUser.lists.forEach(function(list){
+        if(list.name === listName) {
+          list.items.push(item);
+          foundUser.save();
+          res.redirect("/user/"+ username + "/" + listName)
+        }
+      });
+    }
+    else{
+      console.log(err);
+    }
+  });
 });
 
 app.post("/delete", function(req, res){
   const checkeditem = req.body.checkbox;
   const listName = req.body.listName;
+  const username = req.body.username;
 
-  if(listName=== "Today"){
-    Item.findByIdAndRemove(checkeditem, function(err){
-      if(err){
-        console.log(err);
+  User.findOne({username: username}, function(err, foundUser){
+    foundUser.lists.forEach(function(list){
+      if(list.name==listName){
+        list.items.forEach(function(item){
+          if (item._id == checkeditem){
+            list.items.pop(item);
+            foundUser.save(function(err){
+              if(!err){
+                res.redirect("/user/" + username + "/" + listName);
+              }
+            });
+          }
+        })
       }
-      else{
-        res.redirect("/");
-      }
-    });
-  }
-  else{
-    List.findOneAndUpdate({name: listName}, {$pull: {items: {_id: checkeditem}}}, function(err, foundList){
-      if(!err){
-        res.redirect("/" + listName);
-      }
-    });
-  }
+    })
+  })
 });
 
 let port = process.env.PORT;
 if (port == null || port == ""){
-  port = 3000;
+port = 3000;
 }
 
 app.listen (port, function (){

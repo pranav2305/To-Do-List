@@ -57,18 +57,22 @@ form.item {
 }
 
 button {
-  min-height: 50px;
-  width: 50px;
-  border-radius: 50%;
-  border-color: transparent;
-  background-color: #A683E3;
-  color: #fff;
-  font-size: 30px;
-  padding-bottom: 6px;
-  border-width: 0;
+    border-color: transparent;
+    background-color: #A683E3;
+    color: #fff;
+    font-size: 30px;
+    padding-bottom: 6px;
+    border-width: 0;
+    border-radius: 20%
 }
 
-input[type="text"] {
+.listbtn {
+    min-height: 50px;
+    width: 50px;
+    border-radius: 50%;
+}
+
+input[type="text"], input[type="password"] {
   text-align: center;
   height: 60px;
   top: 10px;
@@ -93,4 +97,10 @@ footer {
   color: white;
   color: rgba(0, 0, 0, 0.5);
   text-align: center;
+}
+
+label{
+  font-size: 20px;
+  font-weight: 200;
+  margin: 20px auto auto auto;
 }
